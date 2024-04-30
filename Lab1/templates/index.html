@@ -1,25 +1,142 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Word Frequency Counter</title>
-        <!-- Bootstrap CSS -->
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-        <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    </head>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Frequency Counter</title>
+    <style>
+        /* Стили для модального окна */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
 <body>
-    <div class="container">
-        <h1>Word Frequency Counter</h1>
-        <form action="/process_text" method="POST">
-            <textarea name="text" rows="10" cols="50" placeholder="Enter your text here..." required></textarea><br><br>
-            <input type="submit" value="Submit">
-        </form>
-        <form action="/process_file" method="POST" enctype="multipart/form-data">
-            <input type="file" name="file" accept=".doc,.docx" required><br><br>
-            <input type="submit" class="btn btn-primary" value="Submit">
-        </form>
-        
+    <h1>Word Frequency Counter</h1>
+    <form action="/process_file" method="POST" enctype="multipart/form-data">
+        <input type="file" name="file" accept=".doc,.docx" required><br><br>
+        <input type="submit" value="Submit">
+    </form>
+
+    {# Форма для ввода морфологической информации #}
+    <h2>Enter or edit morphological information for each word:</h2>
+    <form action="/process_morphology" method="POST">
+        {% for word, freq in word_freq %}
+        <div>
+            <label for="word_{{ loop.index }}">Word: {{ word }}</label><br>
+            <input type="hidden" name="word[]" value="{{ word }}">
+            <button class="morphology-btn" data-word="{{ word }}">Add Morphology</button>
+            <br><br>
+        </div>
+        {% endfor %}
+        <input type="submit" value="Submit Morphology">
+    </form>
+
+    <!-- Модальное окно для ввода морфологической информации -->
+    <div id="morphologyModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add Morphology for <span id="modalWord"></span></h2>
+            <form id="morphologyForm">
+                <input type="hidden" id="modalWordInput" name="word">
+                <label for="part_of_speech">Part of Speech:</label>
+                <input type="text" id="part_of_speech" name="part_of_speech"><br>
+                <label for="gender">Gender:</label>
+                <input type="text" id="gender" name="gender"><br>
+                <label for="number">Number:</label>
+                <input type="text" id="number" name="number"><br>
+                <label for="case">Case:</label>
+                <input type="text" id="case" name="case"><br><br>
+                <input type="submit" value="Submit">
+            </form>
+        </div>
     </div>
+
+    <script>
+        // Открытие модального окна при нажатии на кнопку "Add Morphology"
+        var modal = document.getElementById("morphologyModal");
+        var btns = document.getElementsByClassName("morphology-btn");
+        var span = document.getElementsByClassName("close")[0];
+        var form = document.getElementById("morphologyForm");
+    
+        for (var i = 0; i < btns.length; i++) {
+            btns[i].onclick = function() {
+                modal.style.display = "block";
+                document.getElementById("modalWord").textContent = this.getAttribute("data-word");
+                document.getElementById("modalWordInput").value = this.getAttribute("data-word");
+            }
+        }
+    
+        // Закрытие модального окна при нажатии на кнопку "Close"
+        span.onclick = function() {
+            modal.style.display = "none";
+        }
+    
+        // Закрытие модального окна при нажатии вне его
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    
+        // Отправка формы асинхронно
+        form.addEventListener('submit', function(event) {
+            event.preventDefault(); // Предотвратить стандартное поведение формы
+    
+            var formData = new FormData(this); // Получить данные формы
+            var xhr = new XMLHttpRequest(); // Создать новый XMLHttpRequest-объект
+    
+            xhr.open('POST', '/process_morphology', true); // Настроить запрос
+    
+            xhr.onload = function() {
+                if (xhr.status >= 200 && xhr.status < 400) {
+                    // Успешно
+                    console.log(xhr.responseText); // Вывести ответ в консоль (можно изменить)
+                    modal.style.display = "none"; // Закрыть модальное окно
+                } else {
+                    // Ошибка
+                    console.error('Error: ' + xhr.statusText); // Вывести ошибку в консоль
+                }
+            };
+    
+            xhr.onerror = function() {
+                // Ошибка сети
+                console.error('Network Error');
+            };
+    
+            xhr.send(formData); // Отправить данные формы
+        });
+    </script>
+    
 </body>
 </html>
