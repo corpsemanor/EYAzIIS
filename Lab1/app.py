@@ -1,57 +1,21 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify, abort
 import nltk
+import json
+import os
 import docx
 import textract
-import re
-
-# app = Flask(__name__)
-
-# nltk.download('punkt')  # Загрузка необходимых данных для токенизации
-
-# @app.route('/')
-# def index():
-#     return render_template('index.html')
-
-# @app.route('/process_file', methods=['POST'])
-# def process_file():
-#     if 'file' not in request.files:
-#         return 'No file uploaded', 400
-
-#     file = request.files['file']
-#     if file.filename == '':
-#         return 'No selected file', 400
-
-#     if file:
-#         if file.filename.endswith('.docx'):
-#             doc = docx.Document(file)
-#             text = '\n'.join([p.text for p in doc.paragraphs])
-#         elif file.filename.endswith('.doc'):
-#             text = textract.process(file)
-#             text = text.decode('utf-8') if isinstance(text, bytes) else text
-
-#         tokens = nltk.word_tokenize(text.lower())  # Токенизация текста
-#         freq_dist = nltk.FreqDist(tokens)  # Подсчет частоты встречаемости слов
-
-#         sorted_word_freq = sorted(freq_dist.items())
-
-#         return render_template('result.html', word_freq=sorted_word_freq)
-
-# if __name__ == '__main__':
-#     app.run(debug=True)
-
-
-
-
-
-from flask import Flask, render_template, request
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
+app.config['RESULTS_FOLDER'] = 'results'
+
+# Проверка наличия папки для сохранения результатов
+if not os.path.exists(app.config['RESULTS_FOLDER']):
+    os.makedirs(app.config['RESULTS_FOLDER'])
 
 @app.route('/')
 def index():
-    # Предполагается, что word_freq представляет список кортежей (слово, частота)
-    word_freq = [('word1', 10), ('word2', 5), ('word3', 3)]  # Пример данных
-    return render_template('index.html', word_freq=word_freq)
+    return render_template('index.html')
 
 @app.route('/process_file', methods=['POST'])
 def process_file():
@@ -63,6 +27,10 @@ def process_file():
         return 'No selected file', 400
 
     if file:
+        # Определение пути для сохранения JSON-файла результата
+        filename = secure_filename(file.filename)
+        json_filename = os.path.join(app.config['RESULTS_FOLDER'], os.path.splitext(filename)[0] + '.json')
+
         if file.filename.endswith('.docx'):
             doc = docx.Document(file)
             text = '\n'.join([p.text for p in doc.paragraphs])
@@ -73,9 +41,40 @@ def process_file():
         tokens = nltk.word_tokenize(text.lower())  # Токенизация текста
         freq_dist = nltk.FreqDist(tokens)  # Подсчет частоты встречаемости слов
 
-        sorted_word_freq = sorted(freq_dist.items())
+        word_freq = sorted(freq_dist.items())
+        
+        # Создание JSON-файла с результатами
+        with open(json_filename, 'w') as json_file:
+            json.dump(word_freq, json_file)
 
-        return render_template('result.html', word_freq=sorted_word_freq)
+        return render_template('result.html', word_freq=word_freq)
+
+@app.route('/previous_results')
+def previous_results():
+    # Проверяем, существует ли папка с результатами
+    if not os.path.exists(app.config['RESULTS_FOLDER']):
+        return 'Папка с результатами не найдена'
+
+    # Получение списка предыдущих результатов
+    previous_results = []
+    for filename in os.listdir(app.config['RESULTS_FOLDER']):
+        if filename.endswith('.json'):
+            previous_results.append((filename, os.path.join(app.config['RESULTS_FOLDER'], filename)))
+    
+    return render_template('previous_results.html', previous_results=previous_results)
+
+@app.route('/view_result/<filename>')
+def view_result(filename):
+    # Проверяем, существует ли запрошенный JSON файл
+    json_filepath = os.path.join(app.config['RESULTS_FOLDER'], filename)
+    if not os.path.exists(json_filepath):
+        abort(404)
+
+    # Загружаем содержимое JSON файла
+    with open(json_filepath) as json_file:
+        data = json.load(json_file)
+    
+    return render_template('result.html', word_freq=data)
 
 @app.route('/process_morphology', methods=['POST'])
 def process_morphology():

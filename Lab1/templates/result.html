@@ -1,22 +1,135 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Word Frequency Counter</title>
-        <!-- Bootstrap CSS -->
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-        <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    </head>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Frequency Counter</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        /* Стили для модального окна */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
 <body>
     <div class="container">
         <h1>Word Frequency Results</h1>
         <ul>
             {% for word, freq in word_freq %}
-                <li>{{ word }}: {{ freq }}</li>
+                <li><a href="#" class="word-link" data-word="{{ word }}">{{ word }}</a>: {{ freq }}</li>
             {% endfor %}
         </ul>
         <a href="/">Back to Input</a>
     </div>
+
+    <!-- Модальное окно для ввода морфологической информации -->
+    <div id="morphologyModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add Morphology for <span id="modalWord"></span></h2>
+            <form id="morphologyForm">
+                <input type="hidden" id="modalWordInput" name="word">
+                <label for="part_of_speech">Part of Speech:</label>
+                <input type="text" id="part_of_speech" name="part_of_speech"><br>
+                <label for="gender">Gender:</label>
+                <input type="text" id="gender" name="gender"><br>
+                <label for="number">Number:</label>
+                <input type="text" id="number" name="number"><br>
+                <label for="case">Case:</label>
+                <input type="text" id="case" name="case"><br><br>
+                <input type="submit" value="Submit">
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Открытие модального окна при клике на словоформу
+        var modal = document.getElementById("morphologyModal");
+        var wordLinks = document.getElementsByClassName("word-link");
+        var span = document.getElementsByClassName("close")[0];
+        var form = document.getElementById("morphologyForm");
+
+        for (var i = 0; i < wordLinks.length; i++) {
+            wordLinks[i].addEventListener("click", function() {
+                var word = this.getAttribute("data-word");
+                modal.style.display = "block";
+                document.getElementById("modalWord").textContent = word;
+                document.getElementById("modalWordInput").value = word;
+            });
+        }
+
+        // Закрытие модального окна при клике на кнопку "Close"
+        span.onclick = function() {
+            modal.style.display = "none";
+        }
+
+        // Закрытие модального окна при клике вне его
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        // Отправка формы асинхронно
+        form.addEventListener('submit', function(event) {
+            event.preventDefault(); // Предотвратить стандартное поведение формы
+
+            var formData = new FormData(this); // Получить данные формы
+            var xhr = new XMLHttpRequest(); // Создать новый XMLHttpRequest-объект
+
+            xhr.open('POST', '/process_morphology', true); // Настроить запрос
+
+            xhr.onload = function() {
+                if (xhr.status >= 200 && xhr.status < 400) {
+                    // Успешно
+                    console.log(xhr.responseText); // Вывести ответ в консоль (можно изменить)
+                    modal.style.display = "none"; // Закрыть модальное окно
+                } else {
+                    // Ошибка
+                    console.error('Error: ' + xhr.statusText); // Вывести ошибку в консоль
+                }
+            };
+
+            xhr.onerror = function() {
+                // Ошибка сети
+                console.error('Network Error');
+            };
+
+            xhr.send(formData); // Отправить данные формы
+        });
+    </script>
 </body>
 </html>

@@ -4,8 +4,54 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Word Frequency Counter</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
-        /* Стили для модального окна */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+
+        input[type="submit"],
+        .btn {
+            padding: 10px 20px;
+            background-color: #000;
+            color: #fff;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        input[type="submit"]:hover,
+        .btn:hover {
+            background-color: #555;
+        }
+
         .modal {
             display: none;
             position: fixed;
@@ -24,6 +70,8 @@
             padding: 20px;
             border: 1px solid #888;
             width: 80%;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
 
         .close {
@@ -35,51 +83,22 @@
 
         .close:hover,
         .close:focus {
-            color: black;
+            color: #000;
             text-decoration: none;
             cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <h1>Word Frequency Counter</h1>
-    <form action="/process_file" method="POST" enctype="multipart/form-data">
-        <input type="file" name="file" accept=".doc,.docx" required><br><br>
-        <input type="submit" value="Submit">
-    </form>
-
-    {# Форма для ввода морфологической информации #}
-    <h2>Enter or edit morphological information for each word:</h2>
-    <form action="/process_morphology" method="POST">
-        {% for word, freq in word_freq %}
-        <div>
-            <label for="word_{{ loop.index }}">Word: {{ word }}</label><br>
-            <input type="hidden" name="word[]" value="{{ word }}">
-            <button class="morphology-btn" data-word="{{ word }}">Add Morphology</button>
-            <br><br>
-        </div>
-        {% endfor %}
-        <input type="submit" value="Submit Morphology">
-    </form>
-
-    <!-- Модальное окно для ввода морфологической информации -->
-    <div id="morphologyModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Add Morphology for <span id="modalWord"></span></h2>
-            <form id="morphologyForm">
-                <input type="hidden" id="modalWordInput" name="word">
-                <label for="part_of_speech">Part of Speech:</label>
-                <input type="text" id="part_of_speech" name="part_of_speech"><br>
-                <label for="gender">Gender:</label>
-                <input type="text" id="gender" name="gender"><br>
-                <label for="number">Number:</label>
-                <input type="text" id="number" name="number"><br>
-                <label for="case">Case:</label>
-                <input type="text" id="case" name="case"><br><br>
-                <input type="submit" value="Submit">
-            </form>
-        </div>
+    <div class="container">
+        <h1>Word Frequency Counter</h1>
+        <form action="/process_file" method="POST" enctype="multipart/form-data">
+            <input type="file" name="file" accept=".doc,.docx" required><br><br>
+            <input type="submit" value="Submit">
+        </form>
+        <a href="/previous_results" class="btn">Предыдущие результаты</a>
+        {# Форма для ввода морфологической информации #}
+        
     </div>
 
     <script>
@@ -137,6 +156,5 @@
             xhr.send(formData); // Отправить данные формы
         });
     </script>
-    
 </body>
 </html>
