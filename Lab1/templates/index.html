@@ -12,10 +12,10 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh; /* Изменено на min-height для обеспечения минимальной высоты */
             margin: 0;
         }
-
+    
         .container {
             max-width: 600px;
             padding: 20px;
@@ -23,8 +23,9 @@
             border-radius: 5px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             text-align: center;
+            height: auto; /* Изменено на auto для автоматической высоты */
         }
-
+    
         textarea {
             width: 100%;
             padding: 10px;
@@ -33,25 +34,31 @@
             resize: vertical;
             box-sizing: border-box;
         }
-
+    
+        form {
+            margin-bottom: 15px;
+        }
+        
         input[type="submit"],
         .btn {
-            padding: 10px 20px;
+            margin-top: 5px;
+            padding: 5px 20px;
             background-color: #000;
             color: #fff;
             border: none;
             border-radius: 25px;
             cursor: pointer;
             transition: background-color 0.3s ease;
-            text-transform: uppercase;
             font-weight: bold;
-        }
+            text-decoration: none;
 
+        }
+    
         input[type="submit"]:hover,
         .btn:hover {
             background-color: #555;
         }
-
+    
         .modal {
             display: none;
             position: fixed;
@@ -63,7 +70,7 @@
             overflow: auto;
             background-color: rgba(0,0,0,0.4);
         }
-
+    
         .modal-content {
             background-color: #fefefe;
             margin: 15% auto;
@@ -73,30 +80,48 @@
             border-radius: 5px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-
+    
         .close {
             color: #aaa;
             float: right;
             font-size: 28px;
             font-weight: bold;
         }
-
+    
         .close:hover,
         .close:focus {
             color: #000;
             text-decoration: none;
             cursor: pointer;
         }
+        input[type="file"] {
+            display: none;
+          }
+          
+          .custom-file-upload {
+            margin-top: 15px;
+            padding: 5px 20px;
+            background-color: #000;
+            color: #fff;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-weight: bold;
+          }
     </style>
+    
 </head>
 <body>
     <div class="container">
         <h1>Word Frequency Counter</h1>
         <form action="/process_file" method="POST" enctype="multipart/form-data">
-            <input type="file" name="file" accept=".doc,.docx" required><br><br>
-            <input type="submit" value="Submit">
+            <label for="file-upload" class="custom-file-upload">Upload</label>
+            <input id="file-upload" type="file" name="file" accept=".doc,.docx" required onchange="updateFileName(this)"><br><br>
+            <span id="file-name"></span>
+            <input type="submit" value="Submit" style="margin-bottom: 5px; font-size: 16px;">
         </form>
-        <a href="/previous_results" class="btn">Предыдущие результаты</a>
+        <a href="/previous_results" class="btn" style="margin-top: 15px; font-size: 16px;">Show Previous</a>
         {# Форма для ввода морфологической информации #}
         
     </div>
@@ -155,6 +180,10 @@
     
             xhr.send(formData); // Отправить данные формы
         });
+        function updateFileName(input) {
+            var fileName = input.files[0].name;
+            document.getElementById('file-name').textContent = fileName;
+        }
     </script>
 </body>
 </html>

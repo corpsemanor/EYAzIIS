@@ -48,8 +48,8 @@
     <div class="container">
         <h1>Word Frequency Results</h1>
         <ul>
-            {% for word, freq in word_freq %}
-                <li><a href="#" class="word-link" data-word="{{ word }}">{{ word }}</a>: {{ freq }}</li>
+            {% for lexeme, pos_tag in word_freq %}
+                <li>{{ lexeme }} ({{ pos_tag }})</li>
             {% endfor %}
         </ul>
         <a href="/">Back to Input</a>

@@ -5,6 +5,8 @@ import os
 import docx
 import textract
 from werkzeug.utils import secure_filename
+import collections
+
 
 app = Flask(__name__)
 app.config['RESULTS_FOLDER'] = 'results'
@@ -39,10 +41,18 @@ def process_file():
             text = text.decode('utf-8') if isinstance(text, bytes) else text
 
         tokens = nltk.word_tokenize(text.lower())  # Токенизация текста
-        freq_dist = nltk.FreqDist(tokens)  # Подсчет частоты встречаемости слов
+        word_forms = nltk.pos_tag(tokens)  # Определение частей речи для каждой словоформы
+        lexemes_freq = collections.Counter()  # Счетчик для хранения лексем и их частот
 
-        word_freq = sorted(freq_dist.items())
-        
+        for word_form, pos_tag in word_forms:
+            if pos_tag != 'PUNCT':  # Исключение знаков препинания
+                lexeme = nltk.WordNetLemmatizer().lemmatize(word_form)  # Определение лексемы для словоформы
+                lexemes_freq[(lexeme, pos_tag)] += 1  # Увеличение частоты для данной лексемы и части речи
+
+
+        # Преобразование счетчика в отсортированный список кортежей
+        word_freq = sorted(lexemes_freq.items())
+
         # Создание JSON-файла с результатами
         with open(json_filename, 'w') as json_file:
             json.dump(word_freq, json_file)

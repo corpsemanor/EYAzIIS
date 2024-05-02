@@ -4,13 +4,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Previous Results</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Custom styles */
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        .file-link {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+            font-weight: 400;
+            line-height: 1.25;
+            text-align: center;
+            text-decoration: none;
+            vertical-align: middle;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-radius: 25px;
+            transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+            color: #fff; /* Set text color to white */
+            background-color: #000; /* Set button color to black */
+        }
+
+        .file-link:hover {
+            background-color: #6c757d;
+            border-color: #6c757d;
+        }
+    </style>
 </head>
 <body>
-    <h1>Previous Results</h1>
-    <ul>
-        {% for filename, filepath in previous_results %}
-            <li><a href="{{ url_for('view_result', filename=filename) }}">{{ filename }}</a></li>
-        {% endfor %}
-    </ul>
+    <div class="container">
+        <h1 class="text-center mb-4">Previous Results</h1>
+        <ul class="list-unstyled text-center">
+            {% for filename, filepath in previous_results %}
+                <li><a href="{{ url_for('view_result', filename=filename) }}" class="file-link">{{ filename }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
 </body>
 </html>

@@ -4,13 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Previous Results</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-    <h1>Previous Results</h1>
-    <ul>
-        {% for filename, filepath in previous_results %}
-            <li><a href="{{ url_for('view_result', filename=filename) }}">{{ filename }}</a></li>
-        {% endfor %}
-    </ul>
+    <div class="container">
+        <h1 class="mt-5 mb-4">Previous Results</h1>
+        <ul class="list-group">
+            {% for filename, filepath in previous_results %}
+                <li class="list-group-item"><a href="{{ url_for('view_result', filename=filename) }}">{{ filename }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
 </body>
 </html>
