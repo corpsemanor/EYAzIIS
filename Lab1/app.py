@@ -11,7 +11,7 @@ import tempfile
 import docx2txt
 from spire.doc import *
 from spire.doc.common import *
-
+flag = 0
 app = Flask(__name__)
 app.config['RESULTS_FOLDER'] = 'results'
 
@@ -49,8 +49,6 @@ import pymorphy2
 
 @app.route('/process_file', methods=['POST'])
 def process_file():
-    notes = {}  # Initialize the notes dictionary
-
     if 'file' not in request.files:
         return 'No file uploaded', 400
 
@@ -70,39 +68,40 @@ def process_file():
             doc = docx.Document(temp_file_path)
             text = '\n'.join([p.text for p in doc.paragraphs])
         elif file.filename.endswith('.doc'):
-            document = Document()
-            document.LoadFromFile(temp_file_path)
-            text = document.GetText()
-            text = '\n'.join(text.split('\n', 1)[1:])
+            # Handle .doc files
+            pass
 
         os.remove(temp_file_path)
         os.rmdir(temp_dir)
 
         tokens = nltk.word_tokenize(text.lower())
-        word_forms = [(token, morph_analyzer.parse(token)[0].tag.POS) for token in tokens if token.isalpha()]  
-        lexemes_freq = collections.Counter()  
+        word_forms = [(token, morph_analyzer.parse(token)[0].tag.POS) for token in tokens if token.isalpha()]
+        lexemes_freq = collections.Counter()
+
+        word_freq = {}
 
         for word_form, pos_tag in word_forms:
-            lexeme = morph_analyzer.parse(word_form)[0].normal_form  
-            pos_tag_ru = pos_translation.get(pos_tag, 'Неизвестно')  
-            if lexeme != word_form:  # Если слово не является лексемой
-                notes[word_form] = {'note': '', 'pos_tag': pos_tag_ru}  # Добавляем примечание и часть речи
+            lexeme = morph_analyzer.parse(word_form)[0].normal_form
+            pos_tag_ru = pos_translation.get(pos_tag, 'Неизвестно')
             lexemes_freq[(word_form, lexeme, pos_tag_ru)] += 1
+            word_freq[word_form] = {'lexeme': lexeme, 'pos_tag': pos_tag_ru, 'frequency': lexemes_freq[(word_form, lexeme, pos_tag_ru)], 'note': ''}
 
-        # Сохраняем словарь примечаний в JSON-файл
-        notes_filename = os.path.join(app.config['RESULTS_FOLDER'], 'notes.json')
-        with open(notes_filename, 'w') as notes_file:
-            json.dump(notes, notes_file)
-
-        word_freq = sorted(lexemes_freq.items())
 
         json_filename = os.path.join(app.config['RESULTS_FOLDER'], os.path.splitext(file.filename)[0] + '.json')
 
-        with open(json_filename, 'w') as json_file:
-            json.dump(word_freq, json_file)
 
-        return render_template('result.html', word_freq=word_freq)
+        print("file:",json_filename)
+        wordw = request.form.get('qwsd')
+        if not os.path.exists(json_filename):
 
+            with open(json_filename, 'w', encoding='utf-8') as json_file:
+                json.dump(word_freq, json_file, ensure_ascii=False)
+        else:
+           
+            with open(json_filename, 'r', encoding='utf-8') as json_file:
+                word_freq = json.load(json_file)
+        # Передача данных в шаблон
+        return render_template('result.html', word_freq=word_freq, json_filename=json_filename)
 
 
 @app.route('/previous_results')
@@ -131,22 +130,36 @@ def view_result(filename):
 
 @app.route('/process_morphology', methods=['POST'])
 def process_morphology():
-    # Initialize the notes dictionary
-    notes = {}
 
-    # Получаем данные из формы
+    global flag
+    flag =1
+
+    print("=============================")
+
+    json_filename = request.form.get('json_filename')
+    corrected_filename = json_filename.replace('results', 'results/')
+
     word = request.form.get('word')
     note = request.form.get('note')
+
+    print(corrected_filename)
+
+    with open(corrected_filename, 'r', encoding='utf-8') as json_file:
+        word_freq = json.load(json_file)
+
+    # os.remove('results\гиис3.json')
+
+    #  if word in word_freq:
+    word_freq[word]['note'] = note
     
-    # Добавляем примечание к слову в словаре
-    notes[word] = {'note': note}
-    
-    # Сохраняем обновленный словарь примечаний в JSON-файл
-    notes_filename = os.path.join(app.config['RESULTS_FOLDER'], 'notes.json')
-    with open(notes_filename, 'w') as notes_file:
-        json.dump(notes, notes_file)
-    
+    # print(word_freq)
+
+    with open(corrected_filename, 'w', encoding='utf-8') as json_file:
+        json.dump(word_freq, json_file, ensure_ascii=False)
+    print("=============================")
+
     return 'Note added successfully'
+
 
 
 if __name__ == '__main__':

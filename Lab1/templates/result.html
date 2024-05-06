@@ -12,9 +12,14 @@
     <div class="container">
         <h1>Word Frequency Results</h1>
         <ul>
-            {% for word_form, lexeme, pos_tag in word_freq %}
-                <li><a href="#" class="word-link" data-word="{{ word_form }}">{{ word_form }}</a> ({{ lexeme }} - {{ pos_tag }})</li>
-            {% endfor %}
+            {% for item in word_freq.items() %}
+            {% set word_form = item[0] %}
+            {% set lexeme = item[1]['lexeme'] %}
+            {% set pos_tag = item[1]['pos_tag'] %}
+            {% set note = item[1]['note'] %}
+            {% set frequency = item[1]['frequency'] %}
+            <li><a href="#" class="word-link" data-word="{{ word_form }}">{{ word_form }}</a> ({{ lexeme }} - {{ pos_tag }}) -  {{ frequency }} - Примечание: {{ note }}</li>
+        {% endfor %}
         </ul>
         <a href="/">Back to Input</a>
     </div>
@@ -24,15 +29,15 @@
         <div class="modal-content">
             <span class="close">&times;</span>
             <h2>Add Note for <span id="modalWord"></span></h2>
-            <form id="noteForm">
+            <form id="noteForm" data-json-filename="{{ json_filename }}">
                 <input type="hidden" id="modalWordInput" name="word">
+                <input type="hidden" id="jsonFilenameInput" name="json_filename" value="{{ url_for('view_result', filename=json_filename) }}">
                 <label for="note">Note:</label>
                 <textarea id="note" name="note"></textarea><br><br>
-                <input type="submit" value="Add Note">
+                <input type="button" value="Add Note" id="addNoteButton">
             </form>
         </div>
     </div>
-
     <script>
         // Get the modal
         var modal = document.getElementById("noteModal");
@@ -45,11 +50,14 @@
         for (var i = 0; i < wordLinks.length; i++) {
             wordLinks[i].addEventListener("click", function() {
                 var word = this.getAttribute("data-word");
+                var jsonFilename = "{{ json_filename }}";  // Установка значения из Flask-переменной
                 modal.style.display = "block";
                 document.getElementById("modalWord").textContent = word;
                 document.getElementById("modalWordInput").value = word;
+                document.getElementById("jsonFilenameInput").value = jsonFilename;  // Установка значения для json_filename
             });
         }
+        
         
         // When the user clicks on <span> (x), close the modal
         span.onclick = function() {
@@ -62,12 +70,11 @@
                 modal.style.display = "none";
             }
         }
-
+    
         // Handle form submission for adding notes
-        var noteForm = document.getElementById("noteForm");
-        noteForm.addEventListener("submit", function(event) {
-            event.preventDefault();
-            var formData = new FormData(this);
+        var addNoteButton = document.getElementById("addNoteButton");
+        addNoteButton.addEventListener("click", function() {
+            var formData = new FormData(document.getElementById("noteForm"));
             fetch("/process_morphology", {
                 method: "POST",
                 body: formData
@@ -76,9 +83,12 @@
             .then(data => {
                 console.log(data); // Log success message
                 modal.style.display = "none"; // Close the modal
+                // Reload the page to reflect the changes
+                location.reload();
             })
             .catch(error => console.error(error));
         });
+
     </script>
 </body>
 </html>
